@@ -1,322 +1,187 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Simulador de Pilas</title>
-<style>
-:root {
-  --bg: #e9edf1; --panel: #ffffff; --ink: #1c2630; --muted: #5d6b79; --line: #d3dae1;
-  --block: #1f6f78; --block-ink: #ffffff; --top: #e08a1e; --top-ink: #1c1100;
-  --ok: #1b7f4b; --err: #b3261e; --info: #1f5f99;
-  --push: #1f6f78; --pop: #b3261e; --peek: #1f5f99; --clear: #6b5b95;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #11171d; --panel: #1a232c; --ink: #e8edf2; --muted: #93a1af; --line: #2c3a47;
-          --block: #2a8791; --top: #f0a030; --ok: #4fc98a; --err: #ff8a80; --info: #7db8f0; }
-}
-* { box-sizing: border-box; }
-body { margin: 0; padding: 24px; background: var(--bg); color: var(--ink);
-       font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; line-height: 1.45; }
-h1 { margin: 0 0 4px; font-size: 1.6rem; }
-.sub { margin: 0 0 20px; color: var(--muted); }
-.layout { display: grid; grid-template-columns: minmax(300px, 420px) 1fr; gap: 24px; max-width: 1100px; margin: 0 auto; }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
-.panel h2 { margin: 0 0 10px; font-size: 1.05rem; }
-.panel + .panel { margin-top: 16px; }
-label { display: block; font-size: .85rem; color: var(--muted); margin: 10px 0 4px; }
-input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px;
-        background: var(--bg); color: var(--ink); font: inherit; }
-input:focus-visible, button:focus-visible { outline: 3px solid var(--info); outline-offset: 1px; }
-.row { display: flex; gap: 10px; } .row > * { flex: 1; }
-button { padding: 10px 12px; border: 0; border-radius: 6px; color: #fff; font: inherit; font-weight: 600;
-         cursor: pointer; margin-top: 12px; width: 100%; }
-button:hover:not(:disabled) { filter: brightness(1.1); }
-button:disabled { opacity: .4; cursor: not-allowed; }
-.b-set { background: var(--ink); color: var(--panel); }
-.b-push { background: var(--push); } .b-pop { background: var(--pop); }
-.b-peek { background: var(--peek); } .b-clear { background: var(--clear); }
-.fields { margin-top: 6px; }
-.hint { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
-#message { min-height: 24px; margin: 14px 0 0; font-weight: 600; }
-#message.ok { color: var(--ok); } #message.err { color: var(--err); } #message.info { color: var(--info); }
-.log { margin: 0; padding: 0; list-style: none; font-size: .88rem; max-height: 160px; overflow-y: auto; }
-.log li { padding: 5px 0; border-bottom: 1px solid var(--line); color: var(--muted); }
-.log li:first-child { color: var(--ink); }
-.log:empty::after { content: "Todavía no hiciste ninguna operación."; color: var(--muted); }
-
-.stack-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
-.meter { height: 8px; border-radius: 4px; background: var(--line); overflow: hidden; margin-bottom: 18px; }
-.meter > div { height: 100%; width: 0; background: var(--block); transition: width .3s ease; }
-.meter.full > div { background: var(--err); }
-.stats { display: flex; gap: 16px; font-size: .9rem; color: var(--muted); margin-bottom: 14px; flex-wrap: wrap; }
-.stats b { color: var(--ink); }
-
-.stack { display: flex; flex-direction: column-reverse; gap: 8px; min-height: 360px; padding: 12px;
-         border: 3px solid var(--ink); border-top: 0; border-radius: 0 0 12px 12px; background: var(--bg); }
-.item { background: var(--block); color: var(--block-ink); border-radius: 6px; padding: 10px 14px; }
-.item.top { background: var(--top); color: var(--top-ink); }
-.item .head { display: flex; justify-content: space-between; font-size: .78rem; opacity: .85; margin-bottom: 4px; }
-.item .head .tag { font-weight: 700; }
-.item .f { display: flex; gap: 8px; font-size: .95rem; }
-.item .f b { min-width: 0; font-weight: 600; }
-.item .f span { overflow-wrap: anywhere; }
-.empty { margin: auto; color: var(--muted); text-align: center; padding: 20px; }
-
-.enter { animation: enter .35s ease-out; }
-.leave { animation: leave .25s ease-in forwards; }
-.peek { animation: peek 1.2s ease-in-out; }
-@keyframes enter { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: none; } }
-@keyframes leave { to { opacity: 0; transform: translateY(-40px); } }
-@keyframes peek { 0%,100% { box-shadow: 0 0 0 0 transparent; } 30%,70% { box-shadow: 0 0 0 5px var(--info); } }
-@media (prefers-reduced-motion: reduce) { .enter, .leave, .peek { animation: none; } .meter > div { transition: none; } }
-@media (max-width: 800px) { body { padding: 14px; } .layout { grid-template-columns: 1fr; } }
-</style>
+    <meta charset="UTF-8">
+    <title>Simulador de Pilas</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; padding: 20px; gap: 30px; background-color: #121026; color: #d1d0e5;}
+        .panel { flex: 1; background: #1f1b3d; padding: 25px; border-radius: 12px; border: 1px solid #3b3570; }
+        
+        h2 { margin-top: 0; color: #fff; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;}
+        .step-circle { background: #6c5ce7; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 0.9rem; }
+        
+        label { display: block; margin-top: 15px; margin-bottom: 5px; font-size: 0.9rem; font-weight: bold; color: #a5a1c9;}
+        
+        input { padding: 12px; margin: 5px 0; width: 100%; box-sizing: border-box; background: #131127; border: 1px solid #3b3570; color: white; border-radius: 6px; }
+        input:focus { outline: none; border-color: #6c5ce7; }
+        
+        button { cursor: pointer; padding: 12px; margin-top: 15px; width: 100%; border: none; border-radius: 6px; font-weight: bold; font-size: 1rem; transition: background 0.2s;}
+        .btn-primary { background: #e0e0ff; color: #121026; }
+        .btn-primary:hover { background: #ffffff; }
+        .btn-secondary { background: transparent; border: 1px dashed #6c5ce7; color: #6c5ce7; margin-top: 5px; width: auto; padding: 8px 15px; font-size: 0.9rem;}
+        .btn-secondary:hover { background: rgba(108, 92, 231, 0.1); }
+        .btn-push { background: #4a47a3; color: white; }
+        
+        /* Estilos para los recuadros individuales de definición */
+        .def-field-box { display: flex; gap: 10px; align-items: center; background: #2a2550; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #4a47a3;}
+        .def-field-box input { margin: 0; border: none; background: #131127; }
+        .remove-btn { width: auto; padding: 10px 15px; background: #ff4757; color: white; margin: 0; border-radius: 6px;}
+        
+        .stack-container { display: flex; flex-direction: column-reverse; align-items: center; border-left: 4px solid #4a47a3; border-right: 4px solid #4a47a3; border-bottom: 4px solid #4a47a3; width: 300px; min-height: 400px; margin: 20px auto; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 0 0 8px 8px; }
+        .stack-item { width: 100%; background: #6c5ce7; color: white; padding: 12px; margin-top: 8px; border-radius: 6px; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.2); }
+        
+        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .action-buttons button { margin-top: 0; }
+    </style>
 </head>
 <body>
-<h1>Simulador de pilas</h1>
-<p class="sub">Una pila funciona con LIFO: el último elemento que entra es el primero que sale.</p>
 
-<div class="layout">
-  <div>
-    <section class="panel">
-      <h2>1. Definir estructura</h2>
-      <label for="camposInput">Campos separados por comas</label>
-      <input id="camposInput" placeholder="nombre, edad, profesión" autocomplete="off">
-      <label for="capInput">Capacidad máxima de la pila</label>
-      <input id="capInput" type="number" min="1" max="20" value="8">
-      <button class="b-set" id="btnSet">Guardar estructura</button>
-      <p class="hint">Al guardar una estructura nueva, la pila se vacía.</p>
-    </section>
+    <div class="panel">
+        <h2><span class="step-circle">1</span> Estructura de la Pila</h2>
+        <p style="color: #a5a1c9; font-size: 0.9rem;">Creá un recuadro por cada dato que quieras guardar.</p>
+        
+        <div id="defFieldsContainer">
+            <!-- Recuadro individual 1 por defecto -->
+            <div class="def-field-box">
+                <input type="text" class="def-campo" placeholder="Ej: Nombre">
+            </div>
+        </div>
+        
+        <button class="btn-secondary" onclick="addDefField()">+ Agregar otro campo</button>
 
-    <section class="panel">
-      <h2>2. Agregar elemento (Push)</h2>
-      <div id="dynamicInputs" class="fields"></div>
-      <button class="b-push" id="btnPush">Push</button>
-    </section>
+        <label style="margin-top: 25px;">Capacidad máxima de la pila (Límite)</label>
+        <input type="number" id="capacidadInput" min="1" max="20" value="8">
 
-    <section class="panel">
-      <h2>3. Operaciones</h2>
-      <div class="row">
-        <button class="b-pop" id="btnPop">Pop</button>
-        <button class="b-peek" id="btnPeek">Peek</button>
-        <button class="b-clear" id="btnClear">Clear</button>
-      </div>
-      <p id="message" role="status" aria-live="polite"></p>
-    </section>
-
-    <section class="panel">
-      <h2>Historial</h2>
-      <ul class="log" id="log"></ul>
-    </section>
-  </div>
-
-  <section class="panel">
-    <div class="stack-head"><h2 style="margin:0">Representación gráfica</h2><span id="count">0 / 8</span></div>
-    <div class="meter" id="meter"><div></div></div>
-    <div class="stats">
-      <span>Tamaño: <b id="statSize">0</b></span>
-      <span>Estado: <b id="statState">vacía</b></span>
-      <span>Último sacado: <b id="statPopped">—</b></span>
+        <button class="btn-primary" onclick="setStructure()">Guardar estructura</button>
+        <p id="msg1" style="color: #00d2d3; font-weight: bold; font-size: 0.9rem; text-align: center; height: 20px;"></p>
     </div>
-    <div class="stack" id="stackVisual"></div>
-  </section>
-</div>
 
-<script>
-const $ = id => document.getElementById(id);
-let state = { estructura: [], capacidad: 8, pila: [] };
-let msgTimer;
+    <div class="panel">
+        <h2><span class="step-circle">2</span> Apilá un elemento</h2>
+        <p style="color: #a5a1c9; font-size: 0.9rem;">Completá los datos y tocá Push para meterlo a la pila.</p>
+        
+        <div id="dynamicInputs" style="margin-bottom: 15px; background: #2a2550; padding: 15px; border-radius: 8px;">
+            <p style="color: #ff7675; font-size: 0.9rem; text-align: center; margin: 0;">Primero guardá la estructura en el paso 1.</p>
+        </div>
+        <button class="btn-push" onclick="pushItem()" id="btnPush" disabled>Push (Apilar)</button>
 
-async function api(url, method = 'POST', body = null) {
-  try {
-    const opts = { method, headers: { 'Content-Type': 'application/json' } };
-    if (body) opts.body = JSON.stringify(body);
-    return await (await fetch(url, opts)).json();
-  } catch (e) {
-    return { error: 'No se pudo conectar con el servidor.' };
-  }
-}
+        <hr style="border-color: #3b3570; margin: 30px 0;">
 
-function showMessage(text, kind = 'info') {
-  const m = $('message');
-  m.textContent = text;
-  m.className = kind;
-  clearTimeout(msgTimer);
-  msgTimer = setTimeout(() => { m.textContent = ''; m.className = ''; }, 4000);
-}
+        <h2><span class="step-circle">3</span> Controles de Pila</h2>
+        <div class="action-buttons">
+            <button onclick="popItem()" style="background: #ff4757; color: white;">Pop (Sacar)</button>
+            <button onclick="peekItem()" style="background: #00d2d3; color: #121026;">Peek (Ver Cima)</button>
+            <button onclick="clearStack()" style="background: #feca57; color: #121026;">Clear (Vaciar)</button>
+        </div>
+        <p id="msg2" style="color: #ff7675; font-weight: bold; font-size: 0.9rem; text-align: center; height: 20px; margin-top: 15px;"></p>
+    </div>
 
-function log(text) {
-  const li = document.createElement('li');
-  li.textContent = text;
-  const ul = $('log');
-  ul.prepend(li);
-  while (ul.children.length > 30) ul.lastChild.remove();
-}
+    <div class="panel" style="text-align: center;">
+        <h2 style="justify-content: center;">Pila Gráfica</h2>
+        <p id="capacidadTexto" style="color: #a5a1c9; font-size: 0.9rem; font-weight: bold;">Capacidad: 0 / 8</p>
+        <div class="stack-container" id="stackVisual"></div>
+    </div>
 
-const resumen = obj => Object.values(obj).join(', ');
+    <script>
+        let currentFields = [];
+        let maxCap = 8;
 
-function buildInputs() {
-  const box = $('dynamicInputs');
-  box.innerHTML = '';
-  if (!state.estructura.length) {
-    const p = document.createElement('p');
-    p.className = 'hint';
-    p.textContent = 'Primero guardá una estructura.';
-    box.appendChild(p);
-    return;
-  }
-  state.estructura.forEach((campo, i) => {
-    const lab = document.createElement('label');
-    lab.htmlFor = 'campo_' + i;
-    lab.textContent = campo;
-    const inp = document.createElement('input');
-    inp.id = 'campo_' + i;
-    inp.autocomplete = 'off';
-    inp.addEventListener('keydown', e => {
-      if (e.key !== 'Enter') return;
-      const next = $('campo_' + (i + 1));
-      next ? next.focus() : pushItem();
-    });
-    box.append(lab, inp);
-  });
-}
+        async function req(endpoint, method = 'POST', body = null) {
+            const options = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) options.body = JSON.stringify(body);
+            const res = await fetch(endpoint, options);
+            return res.json();
+        }
 
-function renderStack(animarCima = false) {
-  const c = $('stackVisual');
-  const p = state.pila;
-  c.innerHTML = '';
+        function showMsg(id, txt) {
+            document.getElementById(id).innerText = txt;
+            setTimeout(() => document.getElementById(id).innerText = '', 3000);
+        }
 
-  if (!p.length) {
-    const e = document.createElement('p');
-    e.className = 'empty';
-    e.textContent = state.estructura.length
-      ? 'La pila está vacía. Agregá un elemento con Push.'
-      : 'Definí una estructura para empezar.';
-    c.appendChild(e);
-  }
+        function renderStack(pila) {
+            const container = document.getElementById('stackVisual');
+            container.innerHTML = '';
+            document.getElementById('capacidadTexto').innerText = `Capacidad: ${pila.length} / ${maxCap}`;
+            
+            pila.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'stack-item';
+                div.innerHTML = Object.entries(item).map(([k, v]) => `<b style="color:#d1d0e5">${k}:</b> ${v}`).join('<br>');
+                container.appendChild(div);
+            });
+        }
 
-  p.forEach((item, i) => {
-    const esCima = i === p.length - 1;
-    const div = document.createElement('div');
-    div.className = 'item' + (esCima ? ' top' : '') + (esCima && animarCima ? ' enter' : '');
+        // Crea un nuevo recuadro individual para definir un campo
+        function addDefField() {
+            const container = document.getElementById('defFieldsContainer');
+            const row = document.createElement('div');
+            row.className = 'def-field-box';
+            row.innerHTML = `
+                <input type="text" class="def-campo" placeholder="Nuevo campo...">
+                <button class="remove-btn" onclick="this.parentElement.remove()">X</button>
+            `;
+            container.appendChild(row);
+        }
 
-    const head = document.createElement('div');
-    head.className = 'head';
-    const pos = document.createElement('span');
-    pos.textContent = 'Posición ' + i;
-    head.appendChild(pos);
-    if (esCima) {
-      const tag = document.createElement('span');
-      tag.className = 'tag';
-      tag.textContent = '▲ CIMA';
-      head.appendChild(tag);
-    }
-    div.appendChild(head);
+        async function setStructure() {
+            const inputs = document.querySelectorAll('.def-campo');
+            // Recorre cada recuadro individual y extrae su valor
+            const campos = Array.from(inputs).map(inp => inp.value.trim()).filter(val => val !== '');
+            const capacidad = document.getElementById('capacidadInput').value;
 
-    Object.entries(item).forEach(([k, v]) => {
-      const f = document.createElement('div');
-      f.className = 'f';
-      const b = document.createElement('b');
-      b.textContent = k + ':';
-      const s = document.createElement('span');
-      s.textContent = v;
-      f.append(b, s);
-      div.appendChild(f);
-    });
-    c.appendChild(div);
-  });
+            if (campos.length === 0) return showMsg('msg1', "Agrega al menos un recuadro con nombre.");
+            
+            const data = await req('/set_structure', 'POST', { campos, capacidad });
+            currentFields = data.estructura;
+            maxCap = data.capacidad;
+            
+            // Genera los recuadros para rellenar en el Paso 2
+            const inputsContainer = document.getElementById('dynamicInputs');
+            inputsContainer.innerHTML = currentFields.map(campo => 
+                `<div style="margin-bottom: 10px;">
+                    <label style="margin-top: 5px;">${campo}</label>
+                    <input type="text" id="val_${campo}" placeholder="Escribe el valor para ${campo}">
+                </div>`
+            ).join('');
+            
+            document.getElementById('btnPush').disabled = false;
+            renderStack([]);
+            showMsg('msg1', "Estructura configurada.");
+        }
 
-  const llena = p.length >= state.capacidad;
-  $('count').textContent = p.length + ' / ' + state.capacidad;
-  $('meter').firstElementChild.style.width = (p.length / state.capacidad * 100) + '%';
-  $('meter').classList.toggle('full', llena);
-  $('statSize').textContent = p.length;
-  $('statState').textContent = !p.length ? 'vacía' : llena ? 'llena' : 'con elementos';
+        async function pushItem() {
+            if (currentFields.length === 0) return;
+            
+            let elemento = {};
+            for (let campo of currentFields) {
+                let val = document.getElementById(`val_${campo}`).value.trim();
+                if (!val) return showMsg('msg2', `Completá el campo: ${campo}`);
+                elemento[campo] = val;
+            }
 
-  $('btnPush').disabled = !state.estructura.length || llena;
-  $('btnPop').disabled = $('btnPeek').disabled = $('btnClear').disabled = !p.length;
-}
+            const data = await req('/push', 'POST', { elemento });
+            if (data.error) return showMsg('msg2', data.error);
+            
+            renderStack(data.pila);
+            currentFields.forEach(campo => document.getElementById(`val_${campo}`).value = '');
+        }
 
-function sync(data, animarCima = false) {
-  state = { estructura: data.estructura, capacidad: data.capacidad, pila: data.pila };
-  renderStack(animarCima);
-}
+        async function popItem() {
+            const data = await req('/pop');
+            if (data.error) return showMsg('msg2', data.error);
+            renderStack(data.pila);
+        }
 
-async function setStructure() {
-  const campos = $('camposInput').value.split(',').map(s => s.trim()).filter(Boolean);
-  const data = await api('/set_structure', 'POST', { campos, capacidad: $('capInput').value });
-  if (data.error) return showMessage(data.error, 'err');
-  sync(data);
-  buildInputs();
-  $('statPopped').textContent = '—';
-  log('Estructura definida: ' + data.estructura.join(', ') + ' (capacidad ' + data.capacidad + ')');
-  showMessage('Estructura guardada. Ya podés hacer Push.', 'ok');
-  $('campo_0').focus();
-}
+        async function peekItem() {
+            const data = await req('/peek', 'GET');
+            if (data.error) return showMsg('msg2', data.error);
+            alert("En la cima de la pila está:\n" + JSON.stringify(data.cima, null, 2));
+        }
 
-async function pushItem() {
-  if (!state.estructura.length) return showMessage('Definí la estructura primero.', 'err');
-  const elemento = {};
-  for (let i = 0; i < state.estructura.length; i++) {
-    const val = $('campo_' + i).value.trim();
-    if (!val) { $('campo_' + i).focus(); return showMessage('Completá el campo «' + state.estructura[i] + '».', 'err'); }
-    elemento[state.estructura[i]] = val;
-  }
-  const data = await api('/push', 'POST', { elemento });
-  if (data.error) return showMessage(data.error, 'err');
-  sync(data, true);
-  log('Push → ' + resumen(data.pushed));
-  showMessage('Elemento agregado a la cima.', 'ok');
-  state.estructura.forEach((_, i) => $('campo_' + i).value = '');
-  $('campo_0').focus();
-}
-
-async function popItem() {
-  const data = await api('/pop');
-  if (data.error) return showMessage(data.error, 'err');
-  const cima = $('stackVisual').querySelector('.top');
-  if (cima) { cima.classList.add('leave'); await new Promise(r => setTimeout(r, 250)); }
-  sync(data);
-  $('statPopped').textContent = resumen(data.popped);
-  log('Pop ← ' + resumen(data.popped));
-  showMessage('Elemento sacado: ' + resumen(data.popped), 'ok');
-}
-
-async function peekItem() {
-  const data = await api('/peek', 'GET');
-  if (data.error) return showMessage(data.error, 'err');
-  const cima = $('stackVisual').querySelector('.top');
-  if (cima) { cima.classList.remove('peek'); void cima.offsetWidth; cima.classList.add('peek'); }
-  log('Peek: ' + resumen(data.cima));
-  showMessage('Cima: ' + resumen(data.cima), 'info');
-}
-
-async function clearStack() {
-  const data = await api('/clear');
-  if (data.error) return showMessage(data.error, 'err');
-  sync(data);
-  log('Clear: se eliminaron ' + data.eliminados + ' elemento(s)');
-  showMessage('Pila vaciada por completo.', 'ok');
-}
-
-$('btnSet').addEventListener('click', setStructure);
-$('btnPush').addEventListener('click', pushItem);
-$('btnPop').addEventListener('click', popItem);
-$('btnPeek').addEventListener('click', peekItem);
-$('btnClear').addEventListener('click', clearStack);
-$('camposInput').addEventListener('keydown', e => { if (e.key === 'Enter') setStructure(); });
-
-(async function init() {
-  const data = await api('/state', 'GET');
-  if (!data.error) {
-    sync(data);
-    $('capInput').value = data.capacidad;
-    $('camposInput').value = data.estructura.join(', ');
-  }
-  buildInputs();
-  renderStack();
-})();
-</script>
+        async function clearStack() {
+            const data = await req('/clear');
+            renderStack(data.pila);
+        }
+    </script>
 </body>
 </html>
