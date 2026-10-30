@@ -1,8 +1,9 @@
+import os
 import uuid
 from flask import Flask, request, jsonify, session
 
 app = Flask(__name__)
-app.secret_key = "cambia-esta-clave-por-una-propia"
+app.secret_key = os.environ.get("SECRET_KEY", "clave-de-desarrollo")
 
 MAX_CAMPOS = 10
 MAX_CAPACIDAD = 20
@@ -44,137 +45,118 @@ PAGINA = r"""<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulador de Pilas</title>
 <style>
-:root{--bg:#eceaff;--panel:#fff;--ink:#1e1b4b;--muted:#5f5c8c;--line:#d6d2f6;--acc:#5b3df5;--err:#c4264f;--ok:#12805c;--glass:rgba(91,61,245,.08);--edge:#8d83e6}
-@media(prefers-color-scheme:dark){:root{--bg:#12102e;--panel:#1c1946;--ink:#f1efff;--muted:#a9a6d6;--line:#34306f;--acc:#8b78ff;--err:#ff7a9c;--ok:#4fdcaa;--glass:rgba(139,120,255,.1);--edge:#6a60c9}}
+:root{--bg:#121026;--p:#1f1b3d;--p2:#2a2550;--line:#3b3570;--acc:#6c5ce7;--muted:#a5a1c9;--ink:#f1efff;--ok:#2ee6b6;--err:#ff6b81}
 *{box-sizing:border-box}
-body{margin:0;padding:28px 20px 48px;color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;line-height:1.45;
-background:radial-gradient(900px 420px at 85% -10%,rgba(91,61,245,.2),transparent),var(--bg)}
-.wrap{max-width:1120px;margin:0 auto}
-h1{margin:0 0 6px;font-size:clamp(1.9rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-.02em}
-.intro{max-width:62ch;margin:0 0 26px;color:var(--muted);font-size:1.05rem}
-.intro b{color:var(--ink)}
-.layout{display:grid;grid-template-columns:minmax(300px,400px) 1fr;gap:24px;align-items:start}
-.panel{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:18px 20px;margin-bottom:16px;transition:border-color .3s,opacity .3s}
-.panel.active{border-color:var(--acc)}
-.panel.locked{opacity:.5}
-.panel h2{display:flex;align-items:center;gap:10px;margin:0 0 6px;font-size:1.05rem}
-.panel h2 i{display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--acc);color:#fff;font-style:normal;font-size:.85rem}
-.help{margin:0 0 8px;color:var(--muted);font-size:.9rem}
-label{display:block;margin:10px 0 4px;font-size:.85rem;font-weight:700;color:var(--muted)}
-input{width:100%;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:inherit}
-input:focus{border-color:var(--acc)}
-:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
-button{width:100%;margin-top:12px;padding:11px 12px;border:0;border-radius:12px;color:#fff;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.25);transition:transform .12s,box-shadow .12s,filter .15s}
-button:hover:not(:disabled){filter:brightness(1.1);transform:translateY(-2px)}
-button:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.25)}
-button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
-button small{display:block;font-weight:400;font-size:.72rem;opacity:.9}
-.b-set{background:var(--ink);color:var(--panel)}.b-push{background:#5b3df5}.b-pop{background:#d6336c}.b-peek{background:#1479b5}.b-clear{background:#5d5a8a}
-.ops{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.ops button{margin-top:6px}
-
-.coach{display:flex;flex-direction:column;gap:2px;padding:14px 18px;margin-bottom:20px;min-height:84px;background:var(--panel);border:2px solid var(--line);border-left:8px solid var(--acc);border-radius:14px}
+body{margin:0;padding:24px 20px 40px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;color:var(--ink);font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;line-height:1.45;
+background:radial-gradient(800px 380px at 80% -8%,rgba(108,92,231,.28),transparent),var(--bg)}
+.top{flex:1 1 100%}
+h1{margin:0 0 4px;font-size:clamp(1.7rem,4vw,2.4rem);letter-spacing:-.02em}
+.sub{margin:0;color:var(--muted)}
+.coach{flex:1 1 100%;display:flex;flex-direction:column;padding:14px 18px;min-height:78px;background:var(--p);border:1px solid var(--line);border-left:8px solid var(--acc);border-radius:14px}
 .coach b{font-size:1.1rem}.coach span{color:var(--muted)}
 .coach.ok{border-left-color:var(--ok)}.coach.err{border-left-color:var(--err)}
 .coach.flash{animation:flash .5s ease-out}
-.board{display:grid;grid-template-columns:minmax(0,360px) 1fr;gap:28px;align-items:start}
-.tube{position:relative;min-height:420px;padding:14px;display:flex;flex-direction:column;border:5px solid var(--edge);border-top:0;border-radius:0 0 30px 30px;background:linear-gradient(90deg,var(--glass),transparent 28%,transparent 72%,var(--glass))}
+.panel{flex:1;min-width:290px;background:var(--p);padding:24px;border-radius:16px;border:1px solid var(--line);transition:border-color .3s,opacity .3s,box-shadow .3s}
+.panel.active{border-color:var(--acc);box-shadow:0 10px 40px rgba(108,92,231,.2)}
+.panel.locked{opacity:.55}
+h2{margin:0 0 6px;font-size:1.15rem;display:flex;align-items:center;gap:10px}
+.step{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--acc);color:#fff;font-size:.9rem}
+.hint{margin:0 0 12px;color:var(--muted);font-size:.9rem}
+label{display:block;margin:14px 0 4px;font-size:.88rem;font-weight:700;color:var(--muted)}
+input{width:100%;padding:12px;background:#131127;border:1px solid var(--line);border-radius:8px;color:#fff;font:inherit;transition:border-color .2s,box-shadow .2s}
+input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(108,92,231,.3)}
+button{width:100%;margin-top:14px;padding:12px;border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.35);transition:transform .12s,box-shadow .12s,filter .15s}
+button:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-2px)}
+button:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+button:disabled{opacity:.4;cursor:not-allowed;box-shadow:none}
+button small{display:block;font-weight:400;font-size:.72rem;opacity:.85}
+.b-main{background:#e0e0ff;color:#121026}.b-push{background:var(--acc);color:#fff}
+.b-add{background:transparent;border:1px dashed var(--acc);color:#a99dff;width:auto;padding:8px 16px;margin-top:2px;font-size:.9rem;box-shadow:none}
+.def-box{display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px;background:var(--p2);border:1px solid #4a47a3;border-radius:10px;animation:slidein .3s ease-out}
+.def-box input{border:0}
+.x{width:auto;margin:0;padding:10px 14px;background:#ff4757;color:#fff;box-shadow:none}
+.ops{display:flex;gap:10px;flex-wrap:wrap}.ops button{flex:1;min-width:90px;margin-top:0}
+#dynamicInputs{margin-bottom:6px;padding:4px 16px 14px;background:var(--p2);border-radius:10px}
+hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.meter{display:flex;justify-content:space-between;align-items:baseline;font-weight:700}
+.segs{display:flex;gap:3px;margin:8px 0 16px}.seg{flex:1;height:10px;border-radius:4px;background:var(--line);transition:background .3s}
+.tray{display:grid;place-items:center;min-height:86px;padding:8px;border:2px dashed var(--line);border-radius:12px;color:var(--muted);font-size:.88rem;text-align:center}
+.tray .item{width:100%;text-align:left}
+.cap{margin:14px 0 0;font-size:.78rem;color:var(--muted);text-align:center}
+.tube{max-width:300px;min-height:380px;margin:6px auto 0;padding:12px;display:flex;flex-direction:column;border:4px solid #4a47a3;border-top:0;border-radius:0 0 22px 22px;background:linear-gradient(90deg,rgba(108,92,231,.12),transparent 30%,transparent 70%,rgba(108,92,231,.12))}
 .stack{display:flex;flex-direction:column-reverse;gap:8px;margin-top:auto}
-.item{--c:#4cc9f0;--t:#14123a;padding:10px 14px;border-radius:12px;background:var(--c);color:var(--t);box-shadow:0 4px 0 rgba(0,0,0,.2);transform-origin:bottom center}
-.k1{--c:#7b6cff;--t:#fff}.k2{--c:#2ec4a0}.k3{--c:#ffc233}.k4{--c:#ff7aa8}
-.item.top{outline:3px solid var(--ink);outline-offset:3px}
-.hd{display:flex;justify-content:space-between;align-items:center;font-size:.75rem;font-weight:700;opacity:.85}
+.item{--c:#6c5ce7;--t:#fff;padding:10px 14px;border-radius:10px;background:var(--c);color:var(--t);box-shadow:0 4px 0 rgba(0,0,0,.3);transform-origin:bottom center}
+.k1{--c:#00cec9;--t:#0b1a20}.k2{--c:#fd79a8;--t:#2a0a18}.k3{--c:#feca57;--t:#2a1e00}.k4{--c:#54a0ff;--t:#061a33}
+.item.top{outline:3px solid #fff;outline-offset:3px}
+.hd{display:flex;justify-content:space-between;align-items:center;font-size:.72rem;font-weight:700;opacity:.85}
 .badge{padding:1px 9px;border-radius:99px;background:var(--t);color:var(--c)}
 .kvs{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:4px}
-.kv small{display:block;font-size:.7rem;opacity:.75}.kv b{font-size:1rem;overflow-wrap:anywhere}
-.ghost{padding:14px;border:2px dashed var(--edge);border-radius:12px;text-align:center;font-size:.9rem;color:var(--muted)}
+.kv small{display:block;font-size:.68rem;opacity:.75}.kv b{overflow-wrap:anywhere}
+.ghost{padding:12px;border:2px dashed #4a47a3;border-radius:10px;text-align:center;font-size:.88rem;color:var(--muted)}
 .ghost.full{border-color:var(--err);color:var(--err);font-weight:700}
 .drop{animation:drop .75s cubic-bezier(.4,0,.6,1)}
 .pop-in{animation:popin .5s cubic-bezier(.2,1.5,.5,1)}
-.side .box{padding:14px 16px;margin-bottom:16px;background:var(--panel);border:2px solid var(--line);border-radius:16px}
-.side h3{margin:0 0 8px;font-size:.95rem}
-.count{display:flex;justify-content:space-between;align-items:baseline;font-size:1.6rem;font-weight:800}
-.count small{font-size:.85rem;font-weight:400;color:var(--muted)}
-.segs{display:flex;gap:3px;margin:8px 0}.seg{flex:1;height:12px;border-radius:4px;background:var(--line);transition:background .3s}
-.slot{display:grid;place-items:center;min-height:96px;padding:8px;border:2px dashed var(--edge);border-radius:12px;color:var(--muted);font-size:.9rem;text-align:center}
-.slot .item{width:100%;text-align:left}
-.log{margin:0;padding:0;list-style:none;max-height:180px;overflow-y:auto;font-size:.88rem}
-.log li{padding:5px 0;border-bottom:1px solid var(--line);color:var(--muted)}.log li:first-child{color:var(--ink);font-weight:700}
-.log:empty::after{content:"Todavía no hiciste ninguna operación.";color:var(--muted)}
-
+.log{margin:0;padding:0;list-style:none;max-height:130px;overflow-y:auto;font-size:.85rem}
+.log li{padding:4px 0;border-bottom:1px solid var(--line);color:var(--muted)}.log li:first-child{color:var(--ink);font-weight:700}
+.log:empty::after{content:"Sin operaciones todavía.";color:var(--muted)}
 @keyframes drop{0%{transform:translateY(-340px) scale(.96,1.08);opacity:0}45%{opacity:1}60%{transform:none}72%{transform:scale(1.05,.88)}86%{transform:scale(.98,1.04)}100%{transform:none}}
 @keyframes popin{from{transform:scale(.5) rotate(8deg);opacity:0}to{transform:none;opacity:1}}
 @keyframes flash{from{transform:translateY(-8px);opacity:.3}to{transform:none;opacity:1}}
+@keyframes slidein{from{transform:translateX(-24px);opacity:0}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-@media(max-width:860px){.layout,.board{grid-template-columns:1fr}.tube{min-height:320px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-<h1>Simulador de pilas</h1>
-<p class="intro">Una pila es como un tubo de fichas: solo podés agregar o sacar desde <b>arriba</b>. Lo último que entra es lo primero que sale. A eso se le llama <b>LIFO</b>.</p>
-
-<div class="layout">
-<div>
-  <section class="panel active" id="s1">
-    <h2><i>1</i> Elegí qué guarda cada elemento</h2>
-    <p class="help">Escribí los nombres de los datos, separados por comas. Ejemplo: nombre, edad, carrera</p>
-    <label for="camposInput">Campos</label>
-    <input id="camposInput" placeholder="nombre, edad, carrera" autocomplete="off">
-    <label for="capInput">Capacidad máxima (1 a 20)</label>
-    <input id="capInput" type="number" min="1" max="20" value="6">
-    <button class="b-set" id="btnSet">Guardar estructura</button>
-  </section>
-
-  <section class="panel locked" id="s2">
-    <h2><i>2</i> Apilá un elemento</h2>
-    <p class="help">Completá todos los campos y tocá Push. El elemento cae arriba de la pila.</p>
-    <div id="dynamicInputs"></div>
-    <button class="b-push" id="btnPush">Push<small>agrega arriba</small></button>
-  </section>
-
-  <section class="panel locked" id="s3">
-    <h2><i>3</i> Probá las operaciones</h2>
-    <div class="ops">
-      <button class="b-pop" id="btnPop">Pop<small>saca el de arriba</small></button>
-      <button class="b-peek" id="btnPeek">Peek<small>mira sin sacar</small></button>
-      <button class="b-clear" id="btnClear">Clear<small>vacía todo</small></button>
-    </div>
-  </section>
+<div class="top">
+  <h1>Simulador de pilas</h1>
+  <p class="sub">LIFO: el último elemento que entra es el primero que sale. Todo pasa por la cima.</p>
 </div>
+<div class="coach" id="coach" role="status" aria-live="polite"><b id="coachTitle"></b><span id="coachText"></span></div>
 
-<section>
-  <div class="coach" id="coach" role="status" aria-live="polite"><b id="coachTitle"></b><span id="coachText"></span></div>
-  <div class="board">
-    <div class="tube" id="tube"><div class="stack" id="stackVisual"></div></div>
-    <div class="side">
-      <div class="box">
-        <h3>Espacio usado</h3>
-        <div class="count"><span id="count">0 / 6</span><small id="statState">vacía</small></div>
-        <div class="segs" id="segs"></div>
-      </div>
-      <div class="box">
-        <h3>Último elemento sacado</h3>
-        <div class="slot" id="outSlot"></div>
-      </div>
-      <div class="box">
-        <h3>Registro</h3>
-        <ul class="log" id="log"></ul>
-      </div>
-    </div>
+<section class="panel active" id="s1">
+  <h2><span class="step">1</span> Estructura de la Pila</h2>
+  <p class="hint">Creá un recuadro por cada dato que quieras guardar.</p>
+  <div id="defFieldsContainer"></div>
+  <button class="b-add" id="btnAdd">+ Agregar otro campo</button>
+  <label for="capacidadInput">Capacidad máxima de la pila (1 a 20)</label>
+  <input type="number" id="capacidadInput" min="1" max="20" value="8">
+  <button class="b-main" id="btnSet">Guardar estructura</button>
+</section>
+
+<section class="panel locked" id="s2">
+  <h2><span class="step">2</span> Apilá un elemento</h2>
+  <p class="hint">Completá los datos y tocá Push para meterlo a la pila.</p>
+  <div id="dynamicInputs"></div>
+  <button class="b-push" id="btnPush" disabled>Push (Apilar)<small>agrega arriba</small></button>
+  <hr>
+  <h2><span class="step">3</span> Controles de Pila</h2>
+  <div class="ops">
+    <button id="btnPop" style="background:#ff4757;color:#fff">Pop<small>saca el de arriba</small></button>
+    <button id="btnPeek" style="background:#00d2d3;color:#121026">Peek<small>mira sin sacar</small></button>
+    <button id="btnClear" style="background:#feca57;color:#121026">Clear<small>vacía todo</small></button>
   </div>
 </section>
-</div>
-</div>
+
+<section class="panel" style="text-align:center">
+  <h2 style="justify-content:center">Pila Gráfica</h2>
+  <div class="meter"><span>Capacidad</span><span id="count">0 / 8</span></div>
+  <div class="segs" id="segs"></div>
+  <p class="cap" style="margin:0 0 6px">Último sacado con Pop</p>
+  <div class="tray" id="outSlot"></div>
+  <div class="tube" id="tube"><div class="stack" id="stackVisual"></div></div>
+  <h2 style="justify-content:center;margin-top:24px;font-size:1rem">Registro</h2>
+  <ul class="log" id="log" style="text-align:left"></ul>
+</section>
 
 <script>
 const $ = id => document.getElementById(id);
-const PAL = ['#4cc9f0', '#7b6cff', '#2ec4a0', '#ffc233', '#ff7aa8'];
+const PAL = ['#6c5ce7', '#00cec9', '#fd79a8', '#feca57', '#54a0ff'];
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const SHAKE = [{transform:'translateX(0)'},{transform:'translateX(-12px)'},{transform:'translateX(12px)'},{transform:'translateX(-7px)'},{transform:'translateX(7px)'},{transform:'translateX(0)'}];
-let state = { estructura: [], capacidad: 6, pila: [] };
+let state = { estructura: [], capacidad: 8, pila: [] };
 let busy = false;
 
-async function api(url, method = 'POST', body = null) {
+async function req(url, method = 'POST', body = null) {
   try {
     const opts = { method, headers: { 'Content-Type': 'application/json' } };
     if (body) opts.body = JSON.stringify(body);
@@ -215,7 +197,8 @@ function fail(msg) {
   if (o || u) anim($('tube'), SHAKE, { duration: 450 });
 }
 
-const resumen = obj => Object.values(obj).join(', ');
+// El servidor puede devolver los campos en otro orden: usamos el de la estructura.
+const resumen = obj => state.estructura.map(k => obj[k]).join(', ');
 
 function card(item, i, top) {
   const d = document.createElement('div');
@@ -233,13 +216,13 @@ function card(item, i, top) {
   }
   const kvs = document.createElement('div');
   kvs.className = 'kvs';
-  Object.entries(item).forEach(([k, v]) => {
+  state.estructura.forEach(k => {
     const kv = document.createElement('div');
     kv.className = 'kv';
     const a = document.createElement('small');
     a.textContent = k;
     const b = document.createElement('b');
-    b.textContent = v;
+    b.textContent = item[k];
     kv.append(a, b);
     kvs.appendChild(kv);
   });
@@ -247,26 +230,60 @@ function card(item, i, top) {
   return d;
 }
 
+function makeRow(value = '', removable = true) {
+  const row = document.createElement('div');
+  row.className = 'def-box';
+  const inp = document.createElement('input');
+  inp.type = 'text';
+  inp.className = 'def-campo';
+  inp.placeholder = 'Ej: Nombre';
+  inp.autocomplete = 'off';
+  inp.value = value;
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') setStructure(); });
+  row.appendChild(inp);
+  if (removable) {
+    const x = document.createElement('button');
+    x.className = 'x';
+    x.textContent = 'X';
+    x.addEventListener('click', () => {
+      anim(row, [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateX(30px)' }], { duration: 200 }).then(() => row.remove());
+    });
+    row.appendChild(x);
+  }
+  return row;
+}
+
+function addDefField() {
+  const box = $('defFieldsContainer');
+  if (box.children.length >= 10) return coach('err', 'Máximo 10 campos', 'Ya no caben más datos en cada elemento.');
+  const row = makeRow('', true);
+  box.appendChild(row);
+  row.firstChild.focus();
+}
+
 function buildInputs() {
   const box = $('dynamicInputs');
   box.innerHTML = '';
   if (!state.estructura.length) {
     const p = document.createElement('p');
-    p.className = 'help';
-    p.textContent = 'Primero guardá una estructura en el paso 1.';
+    p.className = 'hint';
+    p.style.cssText = 'color:#ff8a9a;text-align:center;margin:14px 0 0';
+    p.textContent = 'Primero guardá la estructura en el paso 1.';
     box.appendChild(p);
     return;
   }
   state.estructura.forEach((campo, i) => {
     const lab = document.createElement('label');
-    lab.htmlFor = 'campo_' + i;
+    lab.htmlFor = 'val_' + i;
     lab.textContent = campo;
     const inp = document.createElement('input');
-    inp.id = 'campo_' + i;
+    inp.type = 'text';
+    inp.id = 'val_' + i;
     inp.autocomplete = 'off';
+    inp.placeholder = 'Escribí el valor para ' + campo;
     inp.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;
-      const next = $('campo_' + (i + 1));
+      const next = $('val_' + (i + 1));
       next ? next.focus() : pushItem();
     });
     box.append(lab, inp);
@@ -298,11 +315,10 @@ function renderStack(drop = false) {
     $('segs').appendChild(s);
   }
   $('count').textContent = p.length + ' / ' + cap;
-  $('statState').textContent = !p.length ? 'vacía' : full ? 'llena' : 'con elementos';
-
-  $('btnPush').disabled = $('btnPop').disabled = $('btnPeek').disabled = $('btnClear').disabled = !has;
+  ['btnPush', 'btnPop', 'btnPeek', 'btnClear'].forEach(id => { $(id).disabled = !has; });
   $('s1').classList.toggle('active', !has);
-  ['s2', 's3'].forEach(id => { $(id).classList.toggle('locked', !has); $(id).classList.toggle('active', has); });
+  $('s2').classList.toggle('locked', !has);
+  $('s2').classList.toggle('active', has);
 }
 
 function sync(data, drop = false) {
@@ -314,8 +330,9 @@ function resetOut() { $('outSlot').textContent = 'Todavía no sacaste nada'; }
 
 async function setStructure() {
   if (busy) return;
-  const campos = $('camposInput').value.split(',').map(s => s.trim()).filter(Boolean);
-  const data = await api('/set_structure', 'POST', { campos, capacidad: $('capInput').value });
+  const campos = Array.from(document.querySelectorAll('.def-campo')).map(i => i.value.trim()).filter(Boolean);
+  if (!campos.length) return fail('Agregá al menos un campo con nombre.');
+  const data = await req('/set_structure', 'POST', { campos, capacidad: $('capacidadInput').value });
   if (data.error) return fail(data.error);
   sync(data);
   buildInputs();
@@ -323,7 +340,7 @@ async function setStructure() {
   log('Estructura: ' + data.estructura.join(', ') + ' (capacidad ' + data.capacidad + ')');
   coach('ok', 'Estructura lista',
     'Cada elemento tendrá: ' + data.estructura.join(', ') + '. Caben hasta ' + data.capacidad + '. Ahora hacé Push para apilar el primero.');
-  $('campo_0').focus();
+  $('val_0').focus();
 }
 
 async function pushItem() {
@@ -331,23 +348,23 @@ async function pushItem() {
   if (state.pila.length >= state.capacidad) return fail('Overflow');
   const elemento = {};
   for (let i = 0; i < state.estructura.length; i++) {
-    const val = $('campo_' + i).value.trim();
-    if (!val) { $('campo_' + i).focus(); return fail('Completá el campo «' + state.estructura[i] + '».'); }
+    const val = $('val_' + i).value.trim();
+    if (!val) { $('val_' + i).focus(); return fail('Completá el campo «' + state.estructura[i] + '».'); }
     elemento[state.estructura[i]] = val;
   }
-  const data = await api('/push', 'POST', { elemento });
+  const data = await req('/push', 'POST', { elemento });
   if (data.error) return fail(data.error);
   sync(data, true);
   log('Push → ' + resumen(data.pushed));
   coach('ok', 'Push: entró por arriba',
     'El elemento cayó sobre la cima anterior y ahora él es la nueva cima: será el primero en salir.');
-  state.estructura.forEach((_, i) => $('campo_' + i).value = '');
-  $('campo_0').focus();
+  state.estructura.forEach((_, i) => { $('val_' + i).value = ''; });
+  $('val_0').focus();
 }
 
 async function popItem() {
   if (busy || !state.estructura.length) return;
-  const data = await api('/pop');
+  const data = await req('/pop');
   if (data.error) return fail(data.error);
   busy = true;
   coach('ok', 'Pop: salió el de arriba',
@@ -359,8 +376,8 @@ async function popItem() {
     const dy = s.top + s.height / 2 - (r.top + r.height / 2);
     await anim(top, [
       { transform: 'none', opacity: 1 },
-      { transform: 'translateY(-70px) rotate(-3deg)', offset: .3 },
-      { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(8deg) scale(.55)', opacity: .15 }
+      { transform: 'translateY(40px) scale(.97)', offset: .2 },
+      { transform: 'translate(' + dx + 'px,' + dy + 'px) rotate(8deg) scale(.6)', opacity: .15 }
     ], { duration: 850, easing: 'ease-in-out', fill: 'forwards' });
   }
   sync(data);
@@ -374,12 +391,12 @@ async function popItem() {
 
 async function peekItem() {
   if (busy || !state.estructura.length) return;
-  const data = await api('/peek', 'GET');
+  const data = await req('/peek', 'GET');
   if (data.error) return fail(data.error);
   busy = true;
   coach('', 'Peek: solo mirás', 'La cima es: ' + resumen(data.cima) + '. La pila no cambia, nada se saca.');
-  const rest = { transform: 'none', boxShadow: '0 4px 0 rgba(0,0,0,.2)' };
-  const up = { transform: 'translateY(-24px) scale(1.06)', boxShadow: '0 20px 30px rgba(91,61,245,.5)' };
+  const rest = { transform: 'none', boxShadow: '0 4px 0 rgba(0,0,0,.3)' };
+  const up = { transform: 'translateY(-24px) scale(1.06)', boxShadow: '0 20px 30px rgba(0,206,201,.5)' };
   await anim($('stackVisual').querySelector('.top'),
     [rest, { ...up, offset: .35 }, { ...up, offset: .7 }, rest], { duration: 1200, easing: 'ease-in-out' });
   log('Peek: ' + resumen(data.cima));
@@ -388,7 +405,7 @@ async function peekItem() {
 
 async function clearStack() {
   if (busy || !state.estructura.length) return;
-  const data = await api('/clear');
+  const data = await req('/clear');
   if (data.error) return fail(data.error);
   if (!data.eliminados) return coach('', 'Ya estaba vacía', 'No había nada que descartar.');
   busy = true;
@@ -403,25 +420,28 @@ async function clearStack() {
   busy = false;
 }
 
+$('btnAdd').addEventListener('click', addDefField);
 $('btnSet').addEventListener('click', setStructure);
 $('btnPush').addEventListener('click', pushItem);
 $('btnPop').addEventListener('click', popItem);
 $('btnPeek').addEventListener('click', peekItem);
 $('btnClear').addEventListener('click', clearStack);
-$('camposInput').addEventListener('keydown', e => { if (e.key === 'Enter') setStructure(); });
 
 (async function init() {
   resetOut();
-  const data = await api('/state', 'GET');
-  if (!data.error) {
+  const data = await req('/state', 'GET');
+  const box = $('defFieldsContainer');
+  if (!data.error && data.estructura.length) {
     sync(data);
-    $('capInput').value = data.capacidad;
-    $('camposInput').value = data.estructura.join(', ');
+    $('capacidadInput').value = data.capacidad;
+    data.estructura.forEach((c, i) => box.appendChild(makeRow(c, i > 0)));
+    coach('', 'Seguimos donde lo dejaste', 'Tu pila sigue acá. Probá Push, Pop o Peek.');
+  } else {
+    box.appendChild(makeRow('', false));
+    coach('', 'Empecemos', 'Escribí los datos que va a tener cada elemento y guardá la estructura.');
   }
   buildInputs();
   renderStack();
-  coach('', data.estructura && data.estructura.length ? 'Seguimos donde lo dejaste' : 'Empecemos',
-    data.estructura && data.estructura.length ? 'Tu pila sigue acá. Probá Push, Pop o Peek.' : 'Definí los campos en el paso 1 y guardá la estructura.');
 })();
 </script>
 </body>
